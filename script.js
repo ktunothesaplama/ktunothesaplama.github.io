@@ -190,156 +190,151 @@ function calculateTScore(grade, average, stdDev) {
 }
 
 // Get letter grade based on T-Score and class size
-function getLetterGradeFromTScore(tScore, classSize, finalGrade = null) {
+function getLetterGradeFromTScore(tScore, classSize, finalGrade = null, averageVal = null, midtermVal = null) {
     // Fail condition: Final grade less than 45
     if (finalGrade !== null && finalGrade < 45) {
         return { letter: 'FF', coefficient: 0 };
     }
 
-    // Get grade map based on class size and class average
-    const gradeMap = getGradeMapForClassSize(classSize);
-
+    // Get the class average value
+    const averageValue = averageVal !== null ? averageVal : parseFloat(classAverage.value);
+    
     // Map letter grades to coefficients
     const coeffMap = {
         'AA': 4.0, 'BA': 3.5, 'BB': 3.0, 'CB': 2.5,
         'CC': 2.0, 'DC': 1.5, 'DD': 1.0, 'FD': 0.5, 'FF': 0.0
     };
-
-    // Determine letter grade based on T-score
-    for (const [letter, minScore] of Object.entries(gradeMap)) {
-        if (tScore >= minScore) {
-            return { letter, coefficient: coeffMap[letter] };
+    
+    // Use Table 3 for small classes (less than 10 students) or high class average (≥ 80)
+    if (classSize === 'small' || averageValue >= 80) {
+        // For small classes or high average, we use Ham Başarı Notu (raw score)
+        // We need midterm and final values to calculate raw score
+        let rawScore;
+        if (midtermVal !== null && finalGrade !== null) {
+            // Get weight values (default is 50-50 if not specified)
+            const midtermWeight = parseInt(midtermWeightInput.value) / 100;
+            const finalWeight = parseInt(finalWeightInput.value) / 100;
+            
+            // Calculate Ham Başarı Notu
+            rawScore = (midtermVal * midtermWeight) + (finalGrade * finalWeight);
+        } else {
+            // If we don't have midterm and final, use the T-score as a fallback
+            rawScore = tScore;
+        }
+        
+        // Table 3 thresholds
+        if (rawScore >= 90) return { letter: 'AA', coefficient: coeffMap['AA'] };
+        if (rawScore >= 80) return { letter: 'BA', coefficient: coeffMap['BA'] };
+        if (rawScore >= 75) return { letter: 'BB', coefficient: coeffMap['BB'] };
+        if (rawScore >= 70) return { letter: 'CB', coefficient: coeffMap['CB'] };
+        if (rawScore >= 60) return { letter: 'CC', coefficient: coeffMap['CC'] };
+        if (rawScore >= 50) return { letter: 'DC', coefficient: coeffMap['DC'] };
+        if (rawScore >= 40) return { letter: 'DD', coefficient: coeffMap['DD'] };
+        if (rawScore >= 30) return { letter: 'FD', coefficient: coeffMap['FD'] };
+        return { letter: 'FF', coefficient: coeffMap['FF'] };
+    } else {
+        // For larger classes, use T-score based grading
+        const gradeMap = getGradeMapForClassAverage(averageValue);
+        
+        // Create a sorted array of grade thresholds in descending order
+        const gradeThresholds = [
+            { letter: 'AA', minScore: gradeMap.AA },
+            { letter: 'BA', minScore: gradeMap.BA },
+            { letter: 'BB', minScore: gradeMap.BB },
+            { letter: 'CB', minScore: gradeMap.CB },
+            { letter: 'CC', minScore: gradeMap.CC },
+            { letter: 'DC', minScore: gradeMap.DC },
+            { letter: 'DD', minScore: gradeMap.DD },
+            { letter: 'FD', minScore: gradeMap.FD },
+            { letter: 'FF', minScore: 0 }
+        ];
+        
+        // Determine letter grade based on T-score
+        for (const grade of gradeThresholds) {
+            if (tScore >= grade.minScore) {
+                return { letter: grade.letter, coefficient: coeffMap[grade.letter] };
+            }
         }
     }
 
-    // Default to FF if no match found
+    // Default to FF if no match found (should never reach here)
     return { letter: 'FF', coefficient: 0 };
 }
 
-// Get dynamic grade map based on class size and average
-function getGradeMapForClassSize(classSize) {
-    // Get the class average value
-    const averageValue = parseFloat(classAverage.value);
-    
-    // Determine the level based on class average
-    let level;
-    if (averageValue < 42.5) {
-        level = 'low';
-    } else if (averageValue >= 42.5 && averageValue < 47.5) {
-        level = 'below-medium';
-    } else if (averageValue >= 47.5 && averageValue <= 52.5) {
-        level = 'medium';
-    } else if (averageValue > 52.5 && averageValue <= 57.5) {
-        level = 'above-medium';
-    } else {
-        level = 'high';
+// Get dynamic grade map based on class average
+function getGradeMapForClassAverage(averageValue) {
+    // First check for absolute grading threshold (Class Average ≥ 80)
+    if (averageValue >= 80) {
+        return {
+            'AA': 90, 'BA': 80, 'BB': 75, 'CB': 70, 
+            'CC': 60, 'DC': 50, 'DD': 40, 'FD': 30, 'FF': 0
+        };
     }
     
-    // Set grade thresholds based on level and class size
+    // Determine the level based on class average according to KTU Table 1
+    let level;
+    if (averageValue > 70 && averageValue < 80) {
+        level = 'excellent';
+    } else if (averageValue > 62.5 && averageValue <= 70) {
+        level = 'very-good';
+    } else if (averageValue > 57.5 && averageValue <= 62.5) {
+        level = 'good';
+    } else if (averageValue > 52.5 && averageValue <= 57.5) {
+        level = 'above-average';
+    } else if (averageValue > 47.5 && averageValue <= 52.5) {
+        level = 'average';
+    } else if (averageValue > 42.5 && averageValue <= 47.5) {
+        level = 'below-average';
+    } else { // ≤ 42.5
+        level = 'poor';
+    }
+    
+    // Set grade thresholds based on class average level
     let gradeMap;
     
-    if (classSize === 'small') { // Less than 10 students
-        // Small class size thresholds
-        switch(level) {
-            case 'low':
-                gradeMap = {
-                    'AA': 52, 'BA': 47, 'BB': 42, 'CB': 37, 
-                    'CC': 32, 'DC': 27, 'DD': 22, 'FD': 17, 'FF': 0
-                };
-                break;
-            case 'below-medium':
-                gradeMap = {
-                    'AA': 54, 'BA': 49, 'BB': 44, 'CB': 39, 
-                    'CC': 34, 'DC': 29, 'DD': 24, 'FD': 19, 'FF': 0
-                };
-                break;
-            case 'medium':
-                gradeMap = {
-                    'AA': 57, 'BA': 52, 'BB': 47, 'CB': 42, 
-                    'CC': 37, 'DC': 32, 'DD': 27, 'FD': 22, 'FF': 0
-                };
-                break;
-            case 'above-medium':
-                gradeMap = {
-                    'AA': 60, 'BA': 55, 'BB': 50, 'CB': 45, 
-                    'CC': 40, 'DC': 35, 'DD': 30, 'FD': 25, 'FF': 0
-                };
-                break;
-            case 'high':
-                gradeMap = {
-                    'AA': 62, 'BA': 57, 'BB': 52, 'CB': 47, 
-                    'CC': 42, 'DC': 37, 'DD': 32, 'FD': 27, 'FF': 0
-                };
-                break;
-        }
-    } else if (classSize === 'medium') { // 10-30 students
-        // Medium class size thresholds
-        switch(level) {
-            case 'low':
-                gradeMap = {
-                    'AA': 57, 'BA': 52, 'BB': 47, 'CB': 42, 
-                    'CC': 37, 'DC': 32, 'DD': 27, 'FD': 22, 'FF': 0
-                };
-                break;
-            case 'below-medium':
-                gradeMap = {
-                    'AA': 60, 'BA': 55, 'BB': 50, 'CB': 45, 
-                    'CC': 40, 'DC': 35, 'DD': 30, 'FD': 25, 'FF': 0
-                };
-                break;
-            case 'medium':
-                gradeMap = {
-                    'AA': 62, 'BA': 57, 'BB': 52, 'CB': 47, 
-                    'CC': 42, 'DC': 37, 'DD': 32, 'FD': 27, 'FF': 0
-                };
-                break;
-            case 'above-medium':
-                gradeMap = {
-                    'AA': 65, 'BA': 60, 'BB': 55, 'CB': 50, 
-                    'CC': 45, 'DC': 40, 'DD': 35, 'FD': 30, 'FF': 0
-                };
-                break;
-            case 'high':
-                gradeMap = {
-                    'AA': 67, 'BA': 62, 'BB': 57, 'CB': 52, 
-                    'CC': 47, 'DC': 42, 'DD': 37, 'FD': 32, 'FF': 0
-                };
-                break;
-        }
-    } else { // More than 30 students
-        // Large class size thresholds
-        switch(level) {
-            case 'low':
-                gradeMap = {
-                    'AA': 62, 'BA': 57, 'BB': 52, 'CB': 47, 
-                    'CC': 42, 'DC': 37, 'DD': 32, 'FD': 27, 'FF': 0
-                };
-                break;
-            case 'below-medium':
-                gradeMap = {
-                    'AA': 65, 'BA': 60, 'BB': 55, 'CB': 50, 
-                    'CC': 45, 'DC': 40, 'DD': 35, 'FD': 30, 'FF': 0
-                };
-                break;
-            case 'medium':
-                gradeMap = {
-                    'AA': 67, 'BA': 62, 'BB': 57, 'CB': 52, 
-                    'CC': 47, 'DC': 42, 'DD': 37, 'FD': 32, 'FF': 0
-                };
-                break;
-            case 'above-medium':
-                gradeMap = {
-                    'AA': 70, 'BA': 65, 'BB': 60, 'CB': 55, 
-                    'CC': 50, 'DC': 45, 'DD': 40, 'FD': 35, 'FF': 0
-                };
-                break;
-            case 'high':
-                gradeMap = {
-                    'AA': 72, 'BA': 67, 'BB': 62, 'CB': 57, 
-                    'CC': 52, 'DC': 47, 'DD': 42, 'FD': 37, 'FF': 0
-                };
-                break;
-        }
+    switch(level) {
+        case 'excellent':
+            gradeMap = {
+                'AA': 59, 'BA': 54, 'BB': 49, 'CB': 44, 
+                'CC': 39, 'DC': 34, 'DD': 29, 'FD': 24, 'FF': 0
+            };
+            break;
+        case 'very-good':
+            gradeMap = {
+                'AA': 61, 'BA': 56, 'BB': 51, 'CB': 46, 
+                'CC': 41, 'DC': 36, 'DD': 31, 'FD': 26, 'FF': 0
+            };
+            break;
+        case 'good':
+            gradeMap = {
+                'AA': 63, 'BA': 58, 'BB': 53, 'CB': 48, 
+                'CC': 43, 'DC': 38, 'DD': 33, 'FD': 28, 'FF': 0
+            };
+            break;
+        case 'above-average':
+            gradeMap = {
+                'AA': 65, 'BA': 60, 'BB': 55, 'CB': 50, 
+                'CC': 45, 'DC': 40, 'DD': 35, 'FD': 30, 'FF': 0
+            };
+            break;
+        case 'average':
+            gradeMap = {
+                'AA': 67, 'BA': 62, 'BB': 57, 'CB': 52, 
+                'CC': 47, 'DC': 42, 'DD': 37, 'FD': 32, 'FF': 0
+            };
+            break;
+        case 'below-average':
+            gradeMap = {
+                'AA': 69, 'BA': 64, 'BB': 59, 'CB': 54, 
+                'CC': 49, 'DC': 44, 'DD': 39, 'FD': 34, 'FF': 0
+            };
+            break;
+        case 'poor':
+            gradeMap = {
+                'AA': 71, 'BA': 66, 'BB': 61, 'CB': 56, 
+                'CC': 51, 'DC': 46, 'DD': 41, 'FD': 36, 'FF': 0
+            };
+            break;
     }
     
     return gradeMap;
@@ -376,15 +371,83 @@ calculateGrade.addEventListener('click', () => {
     // Calculate T-Score
     const tScore = calculateTScore(totalGrade, averageVal, stdDevVal);
     
+    // Debug information - Create a hidden debug div if not exists
+    let debugDiv = document.getElementById('debugInfo');
+    if (!debugDiv) {
+        debugDiv = document.createElement('div');
+        debugDiv.id = 'debugInfo';
+        debugDiv.style.backgroundColor = '#f0f0f0';
+        debugDiv.style.padding = '10px';
+        debugDiv.style.margin = '10px 0';
+        debugDiv.style.borderRadius = '5px';
+        debugDiv.style.fontFamily = 'monospace';
+        debugDiv.style.whiteSpace = 'pre-wrap';
+        debugDiv.style.fontSize = '12px';
+        gradeResult.after(debugDiv);
+    }
+    
+    // Determine level based on average
+    let level = "unknown";
+    if (averageVal >= 80) {
+        level = "absolute";
+    } else if (averageVal > 70 && averageVal < 80) {
+        level = "excellent";
+    } else if (averageVal > 62.5 && averageVal <= 70) {
+        level = "very-good";
+    } else if (averageVal > 57.5 && averageVal <= 62.5) {
+        level = "good";
+    } else if (averageVal > 52.5 && averageVal <= 57.5) {
+        level = "above-average";
+    } else if (averageVal > 47.5 && averageVal <= 52.5) {
+        level = "average";
+    } else if (averageVal > 42.5 && averageVal <= 47.5) {
+        level = "below-average";
+    } else { // ≤ 42.5
+        level = "poor";
+    }
+    
+    // Get grade map for debugging
+    const gradeMap = getGradeMapForClassAverage(averageVal);
+    
     // Get letter grade
-    const { letter, coefficient } = getLetterGradeFromTScore(tScore, classSizeVal, finalVal);
+    const { letter, coefficient } = getLetterGradeFromTScore(tScore, classSizeVal, finalVal, averageVal, midtermVal);
+    
+    // Display debug information
+    debugDiv.innerHTML = `
+        <strong>Hesaplama Detayları:</strong>
+        <hr>
+        Midterm: ${midtermVal}
+        Final: ${finalVal}
+        Ağırlıklar: Vize ${(midtermWeight*100).toFixed(0)}% - Final ${(finalWeight*100).toFixed(0)}%
+        Ham Başarı Notu (HBN): ${totalGrade.toFixed(2)}
+        Sınıf Ortalaması: ${averageVal}
+        Standart Sapma: ${stdDevVal}
+        T-Score: ${tScore.toFixed(2)}
+        Sınıf Mevcud Tipi: ${classSizeVal}
+        Ortalama Seviyesi: ${level}
+        
+        <strong>Not Aralıkları:</strong>
+        AA: T ≥ ${gradeMap.AA}
+        BA: T ≥ ${gradeMap.BA}
+        BB: T ≥ ${gradeMap.BB}
+        CB: T ≥ ${gradeMap.CB}
+        CC: T ≥ ${gradeMap.CC}
+        DC: T ≥ ${gradeMap.DC}
+        DD: T ≥ ${gradeMap.DD}
+        FD: T ≥ ${gradeMap.FD}
+        FF: T < ${gradeMap.FD}
+        
+        <strong>Sonuç:</strong> ${letter} (${coefficient.toFixed(2)})
+    `;
     
     // Display results
     letterGradeElement.textContent = letter;
     numericGradeElement.textContent = coefficient.toFixed(2);
     
     // Check if passing grade and show appropriate message and color
-    const passingGrades = ['AA', 'BA', 'BB', 'CB', 'CC', 'DC'];
+    const passingGrades = ['AA', 'BA', 'BB', 'CB', 'CC'];
+    const conditionalGrade = 'DC';
+    
     if (passingGrades.includes(letter)) {
         if (finalVal < 45) {
             gradeResult.className = 'result fail';
@@ -392,6 +455,15 @@ calculateGrade.addEventListener('click', () => {
         } else {
             gradeResult.className = 'result pass';
             gradeMessage.textContent = 'Tebrikler! Bu dersi başarıyla geçtiniz.';
+        }
+    } else if (letter === conditionalGrade) {
+        // Special case for DC - use yellow color
+        if (finalVal < 45) {
+            gradeResult.className = 'result fail';
+            gradeMessage.textContent = 'Final notunuz 45\'in altında olduğu için dersten kaldınız.';
+        } else {
+            gradeResult.className = 'result conditional';
+            gradeMessage.textContent = 'DC notu ile dönem ortalamanız 2.00 ve üzeri ise dersi şartlı geçtiniz.';
         }
     } else {
         gradeResult.className = 'result fail';
@@ -402,18 +474,27 @@ calculateGrade.addEventListener('click', () => {
 // Calculate required final grade for a specific letter grade
 function calculateRequiredFinalGrade(midterm, average, stdDev, targetTScore, classSize, midtermWeightPercent = null, finalWeightPercent = null) {
     // Get weight percentages (with defaults if not provided)
-    const midtermWeight = midtermWeightPercent !== null ? midtermWeightPercent / 100 : revMidtermWeightInput.value / 100;
-    const finalWeight = finalWeightPercent !== null ? finalWeightPercent / 100 : revFinalWeightInput.value / 100;
+    const midtermWeight = midtermWeightPercent !== null ? midtermWeightPercent / 100 : parseInt(revMidtermWeightInput.value) / 100;
+    const finalWeight = finalWeightPercent !== null ? finalWeightPercent / 100 : parseInt(revFinalWeightInput.value) / 100;
     
-    // Calculate required average for the target T-score
-    const requiredAverage = (((targetTScore - 50) / 10) * stdDev) + parseFloat(average);
-    
-    // Calculate required final grade based on weights
-    // formula: totalGrade = (midterm * midtermWeight) + (final * finalWeight)
-    // rearranged for final: final = (requiredAverage - (midterm * midtermWeight)) / finalWeight
-    const requiredFinal = (requiredAverage - (parseFloat(midterm) * midtermWeight)) / finalWeight;
-    
-    return Math.max(Math.min(Math.ceil(requiredFinal), 100), 0); // Ceiling the value and limit to 0-100 range
+    // For small classes or high class average, use Ham Başarı Notu (raw score) thresholds directly
+    if (classSize === 'small' || average >= 80) {
+        // For small classes we use the absolute scale (Table 3)
+        // formula: totalGrade = (midterm * midtermWeight) + (final * finalWeight)
+        // rearranged for final: final = (targetRawScore - (midterm * midtermWeight)) / finalWeight
+        
+        // Calculate required final grade to achieve the target raw score
+        const requiredFinal = (targetTScore - (parseFloat(midterm) * midtermWeight)) / finalWeight;
+        return Math.max(Math.min(Math.ceil(requiredFinal), 100), 0); // Ceiling the value and limit to 0-100 range
+    } else {
+        // For larger classes, calculate based on T-score system
+        // Calculate required average for the target T-score
+        const requiredAverage = (((targetTScore - 50) / 10) * stdDev) + parseFloat(average);
+        
+        // Calculate required final grade based on weights
+        const requiredFinal = (requiredAverage - (parseFloat(midterm) * midtermWeight)) / finalWeight;
+        return Math.max(Math.min(Math.ceil(requiredFinal), 100), 0); // Ceiling the value and limit to 0-100 range
+    }
 }
 
 // Reverse Calculation Event Handler
@@ -439,74 +520,58 @@ calculateReverse.addEventListener('click', () => {
         return;
     }
     
-    // Determine thresholds based on class size and average
-    let level;
-    if (averageVal < 42.5) {
-        level = 'low';
-    } else if (averageVal >= 42.5 && averageVal < 47.5) {
-        level = 'below-medium';
-    } else if (averageVal >= 47.5 && averageVal <= 52.5) {
-        level = 'medium';
-    } else if (averageVal > 52.5 && averageVal <= 57.5) {
-        level = 'above-medium';
-    } else {
-        level = 'high';
-    }
-    
+    // First check for absolute grading threshold (Class Average ≥ 80)
     let thresholds;
-    if (classSizeVal === 'small') {
-        switch(level) {
-            case 'low':
-                thresholds = { 'AA': 52, 'BA': 47, 'BB': 42, 'CB': 37, 'CC': 32, 'DC': 27, 'DD': 22 };
-                break;
-            case 'below-medium':
-                thresholds = { 'AA': 54, 'BA': 49, 'BB': 44, 'CB': 39, 'CC': 34, 'DC': 29, 'DD': 24 };
-                break;
-            case 'medium':
-                thresholds = { 'AA': 57, 'BA': 52, 'BB': 47, 'CB': 42, 'CC': 37, 'DC': 32, 'DD': 27 };
-                break;
-            case 'above-medium':
-                thresholds = { 'AA': 60, 'BA': 55, 'BB': 50, 'CB': 45, 'CC': 40, 'DC': 35, 'DD': 30 };
-                break;
-            case 'high':
-                thresholds = { 'AA': 62, 'BA': 57, 'BB': 52, 'CB': 47, 'CC': 42, 'DC': 37, 'DD': 32 };
-                break;
-        }
-    } else if (classSizeVal === 'medium') {
-        switch(level) {
-            case 'low':
-                thresholds = { 'AA': 57, 'BA': 52, 'BB': 47, 'CB': 42, 'CC': 37, 'DC': 32, 'DD': 27 };
-                break;
-            case 'below-medium':
-                thresholds = { 'AA': 60, 'BA': 55, 'BB': 50, 'CB': 45, 'CC': 40, 'DC': 35, 'DD': 30 };
-                break;
-            case 'medium':
-                thresholds = { 'AA': 62, 'BA': 57, 'BB': 52, 'CB': 47, 'CC': 42, 'DC': 37, 'DD': 32 };
-                break;
-            case 'above-medium':
-                thresholds = { 'AA': 65, 'BA': 60, 'BB': 55, 'CB': 50, 'CC': 45, 'DC': 40, 'DD': 35 };
-                break;
-            case 'high':
-                thresholds = { 'AA': 67, 'BA': 62, 'BB': 57, 'CB': 52, 'CC': 47, 'DC': 42, 'DD': 37 };
-                break;
-        }
+    
+    if (averageVal >= 80) {
+        thresholds = { 'AA': 90, 'BA': 80, 'BB': 75, 'CB': 70, 'CC': 60, 'DC': 50, 'DD': 40, 'FD': 30};
     } else {
-        switch(level) {
-            case 'low':
-                thresholds = { 'AA': 62, 'BA': 57, 'BB': 52, 'CB': 47, 'CC': 42, 'DC': 37, 'DD': 32 };
-                break;
-            case 'below-medium':
-                thresholds = { 'AA': 65, 'BA': 60, 'BB': 55, 'CB': 50, 'CC': 45, 'DC': 40, 'DD': 35 };
-                break;
-            case 'medium':
-                thresholds = { 'AA': 67, 'BA': 62, 'BB': 57, 'CB': 52, 'CC': 47, 'DC': 42, 'DD': 37 };
-                break;
-            case 'above-medium':
-                thresholds = { 'AA': 70, 'BA': 65, 'BB': 60, 'CB': 55, 'CC': 50, 'DC': 45, 'DD': 40 };
-                break;
-            case 'high':
-                thresholds = { 'AA': 72, 'BA': 67, 'BB': 62, 'CB': 57, 'CC': 52, 'DC': 47, 'DD': 42 };
-                break;
+        // Determine the level based on class average
+        let level;
+        if (averageVal > 70 && averageVal < 80) {
+            level = 'excellent';
+        } else if (averageVal > 62.5 && averageVal <= 70) {
+            level = 'very-good';
+        } else if (averageVal > 57.5 && averageVal <= 62.5) {
+            level = 'good';
+        } else if (averageVal > 52.5 && averageVal <= 57.5) {
+            level = 'above-average';
+        } else if (averageVal > 47.5 && averageVal <= 52.5) {
+            level = 'average';
+        } else if (averageVal > 42.5 && averageVal <= 47.5) {
+            level = 'below-average';
+        } else { // ≤ 42.5
+            level = 'poor';
+        }
+        
+        // Get grade thresholds based on level and class size
+        if (classSizeVal === 'small') { // Less than 10 students
+            thresholds = { 'AA': 90, 'BA': 80, 'BB': 75, 'CB': 70, 'CC': 60, 'DC': 50, 'DD': 40, 'FD': 30};
+            // Note: Removed level cases for small class size as they use a fixed scale
+        } else { // More than 30 students
+            switch(level) {
+                case 'excellent':
+                    thresholds = { 'AA': 59, 'BA': 54, 'BB': 49, 'CB': 44, 'CC': 39, 'DC': 34, 'DD': 29 };
+                    break;
+                case 'very-good':
+                    thresholds = { 'AA': 61, 'BA': 56, 'BB': 51, 'CB': 46, 'CC': 41, 'DC': 36, 'DD': 31 };
+                    break;
+                case 'good':
+                    thresholds = { 'AA': 63, 'BA': 58, 'BB': 53, 'CB': 48, 'CC': 43, 'DC': 38, 'DD': 33 };
+                    break;
+                case 'above-average':
+                    thresholds = { 'AA': 65, 'BA': 60, 'BB': 55, 'CB': 50, 'CC': 45, 'DC': 40, 'DD': 35 };
+                    break;
+                case 'average':
+                    thresholds = { 'AA': 67, 'BA': 62, 'BB': 57, 'CB': 52, 'CC': 47, 'DC': 42, 'DD': 37 };
+                    break;
+                case 'below-average':
+                    thresholds = { 'AA': 69, 'BA': 64, 'BB': 59, 'CB': 54, 'CC': 49, 'DC': 44, 'DD': 39 };
+                    break;
+                case 'poor':
+                    thresholds = { 'AA': 71, 'BA': 66, 'BB': 61, 'CB': 56, 'CC': 51, 'DC': 46, 'DD': 41 };
+                    break;
+            }
         }
     }
     

@@ -37,14 +37,13 @@
                             10'dan az öğrenci
                         </label>
                         <label>
-                            <input type="radio" name="classSize" value="medium"> 
-                            10-30 arası öğrenci
-                        </label>
-                        <label>
                             <input type="radio" name="classSize" value="large"> 
                             30'dan fazla öğrenci
                         </label>
                     </div>
+                    <p class="info-note" style="margin-top: 8px; font-style: italic; color: #555;">
+                        <strong>Not:</strong> Öğrenci sayısı 11 – 29 arasında olan derslerde harfli notların verilmesi, Tablo-2 yardımıyla yapılır.
+                    </p>
                 </div>
 
                 <div class="form-group">
@@ -79,7 +78,7 @@
 
                 <div class="form-group">
                     <label for="classAverage">Sınıf Ortalaması:</label>
-                    <input type="number" id="classAverage" min="0" max="100" placeholder="Sınıf ortalaması">
+                    <input type="number" id="classAverage" min="0" max="100" step="0.01" placeholder="Sınıf ortalaması">
                 </div>
 
                 <div class="form-group">
@@ -116,14 +115,14 @@
                             10'dan az öğrenci
                         </label>
                         <label>
-                            <input type="radio" name="revClassSize" value="medium"> 
-                            10-30 arası öğrenci
-                        </label>
-                        <label>
                             <input type="radio" name="revClassSize" value="large"> 
                             30'dan fazla öğrenci
                         </label>
                     </div>
+                    <p class="info-note" style="margin-top: 8px; font-style: italic; color: #555;">
+                        <strong>Not:</strong> Öğrenci sayısı 11 – 29 arasında olan derslerde harfli notların verilmesi, Mutlak Değerlendirme
+yardımıyla yapılır.
+                    </p>
                 </div>
 
                 <div class="form-group">
@@ -158,7 +157,7 @@
 
                 <div class="form-group">
                     <label for="revClassAverage">Sınıf Ortalaması:</label>
-                    <input type="number" id="revClassAverage" min="0" max="100" placeholder="Sınıf ortalaması">
+                    <input type="number" id="revClassAverage" min="0" max="100" step="0.01" placeholder="Sınıf ortalaması">
                 </div>
 
                 <div class="form-group">
