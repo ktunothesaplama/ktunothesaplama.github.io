@@ -131,25 +131,8 @@ function getLetterGradeFromTScore(tScore, classSize, finalGrade = null) {
         return { letter: 'FF', coefficient: 0 };
     }
 
-    // Different grade limits based on class size
-    let gradeMap;
-    
-    if (classSize === 'small') { // Less than 10 students
-        gradeMap = {
-            'AA': 57, 'BA': 52, 'BB': 47, 'CB': 42, 
-            'CC': 37, 'DC': 32, 'DD': 27, 'FD': 22, 'FF': 0
-        };
-    } else if (classSize === 'medium') { // 10-30 students
-        gradeMap = {
-            'AA': 62, 'BA': 57, 'BB': 52, 'CB': 47, 
-            'CC': 42, 'DC': 37, 'DD': 32, 'FD': 27, 'FF': 0
-        };
-    } else { // More than 30 students
-        gradeMap = {
-            'AA': 67, 'BA': 62, 'BB': 57, 'CB': 52, 
-            'CC': 47, 'DC': 42, 'DD': 37, 'FD': 32, 'FF': 0
-        };
-    }
+    // Get grade map based on class size and class average
+    const gradeMap = getGradeMapForClassSize(classSize);
 
     // Map letter grades to coefficients
     const coeffMap = {
@@ -166,6 +149,135 @@ function getLetterGradeFromTScore(tScore, classSize, finalGrade = null) {
 
     // Default to FF if no match found
     return { letter: 'FF', coefficient: 0 };
+}
+
+// Get dynamic grade map based on class size and average
+function getGradeMapForClassSize(classSize) {
+    // Get the class average value
+    const averageValue = parseFloat(classAverage.value);
+    
+    // Determine the level based on class average
+    let level;
+    if (averageValue < 42.5) {
+        level = 'low';
+    } else if (averageValue >= 42.5 && averageValue < 47.5) {
+        level = 'below-medium';
+    } else if (averageValue >= 47.5 && averageValue <= 52.5) {
+        level = 'medium';
+    } else if (averageValue > 52.5 && averageValue <= 57.5) {
+        level = 'above-medium';
+    } else {
+        level = 'high';
+    }
+    
+    // Set grade thresholds based on level and class size
+    let gradeMap;
+    
+    if (classSize === 'small') { // Less than 10 students
+        // Small class size thresholds
+        switch(level) {
+            case 'low':
+                gradeMap = {
+                    'AA': 52, 'BA': 47, 'BB': 42, 'CB': 37, 
+                    'CC': 32, 'DC': 27, 'DD': 22, 'FD': 17, 'FF': 0
+                };
+                break;
+            case 'below-medium':
+                gradeMap = {
+                    'AA': 54, 'BA': 49, 'BB': 44, 'CB': 39, 
+                    'CC': 34, 'DC': 29, 'DD': 24, 'FD': 19, 'FF': 0
+                };
+                break;
+            case 'medium':
+                gradeMap = {
+                    'AA': 57, 'BA': 52, 'BB': 47, 'CB': 42, 
+                    'CC': 37, 'DC': 32, 'DD': 27, 'FD': 22, 'FF': 0
+                };
+                break;
+            case 'above-medium':
+                gradeMap = {
+                    'AA': 60, 'BA': 55, 'BB': 50, 'CB': 45, 
+                    'CC': 40, 'DC': 35, 'DD': 30, 'FD': 25, 'FF': 0
+                };
+                break;
+            case 'high':
+                gradeMap = {
+                    'AA': 62, 'BA': 57, 'BB': 52, 'CB': 47, 
+                    'CC': 42, 'DC': 37, 'DD': 32, 'FD': 27, 'FF': 0
+                };
+                break;
+        }
+    } else if (classSize === 'medium') { // 10-30 students
+        // Medium class size thresholds
+        switch(level) {
+            case 'low':
+                gradeMap = {
+                    'AA': 57, 'BA': 52, 'BB': 47, 'CB': 42, 
+                    'CC': 37, 'DC': 32, 'DD': 27, 'FD': 22, 'FF': 0
+                };
+                break;
+            case 'below-medium':
+                gradeMap = {
+                    'AA': 60, 'BA': 55, 'BB': 50, 'CB': 45, 
+                    'CC': 40, 'DC': 35, 'DD': 30, 'FD': 25, 'FF': 0
+                };
+                break;
+            case 'medium':
+                gradeMap = {
+                    'AA': 62, 'BA': 57, 'BB': 52, 'CB': 47, 
+                    'CC': 42, 'DC': 37, 'DD': 32, 'FD': 27, 'FF': 0
+                };
+                break;
+            case 'above-medium':
+                gradeMap = {
+                    'AA': 65, 'BA': 60, 'BB': 55, 'CB': 50, 
+                    'CC': 45, 'DC': 40, 'DD': 35, 'FD': 30, 'FF': 0
+                };
+                break;
+            case 'high':
+                gradeMap = {
+                    'AA': 67, 'BA': 62, 'BB': 57, 'CB': 52, 
+                    'CC': 47, 'DC': 42, 'DD': 37, 'FD': 32, 'FF': 0
+                };
+                break;
+        }
+    } else { // More than 30 students
+        // Large class size thresholds
+        switch(level) {
+            case 'low':
+                gradeMap = {
+                    'AA': 62, 'BA': 57, 'BB': 52, 'CB': 47, 
+                    'CC': 42, 'DC': 37, 'DD': 32, 'FD': 27, 'FF': 0
+                };
+                break;
+            case 'below-medium':
+                gradeMap = {
+                    'AA': 65, 'BA': 60, 'BB': 55, 'CB': 50, 
+                    'CC': 45, 'DC': 40, 'DD': 35, 'FD': 30, 'FF': 0
+                };
+                break;
+            case 'medium':
+                gradeMap = {
+                    'AA': 67, 'BA': 62, 'BB': 57, 'CB': 52, 
+                    'CC': 47, 'DC': 42, 'DD': 37, 'FD': 32, 'FF': 0
+                };
+                break;
+            case 'above-medium':
+                gradeMap = {
+                    'AA': 70, 'BA': 65, 'BB': 60, 'CB': 55, 
+                    'CC': 50, 'DC': 45, 'DD': 40, 'FD': 35, 'FF': 0
+                };
+                break;
+            case 'high':
+                gradeMap = {
+                    'AA': 72, 'BA': 67, 'BB': 62, 'CB': 57, 
+                    'CC': 52, 'DC': 47, 'DD': 42, 'FD': 37, 'FF': 0
+                };
+                break;
+        }
+    }
+    
+    return gradeMap;
 }
 
 // Calculate required final grade for a specific letter grade
@@ -252,14 +364,80 @@ calculateReverse.addEventListener('click', () => {
         return;
     }
     
-    // Get grade thresholds based on class size
-    let thresholds;
-    if (classSizeVal === 'small') {
-        thresholds = { 'AA': 57, 'BA': 52, 'BB': 47, 'CB': 42, 'CC': 37, 'DC': 32, 'DD': 27 };
-    } else if (classSizeVal === 'medium') {
-        thresholds = { 'AA': 62, 'BA': 57, 'BB': 52, 'CB': 47, 'CC': 42, 'DC': 37, 'DD': 32 };
+    // Determine the level based on class average
+    let level;
+    if (averageVal < 42.5) {
+        level = 'low';
+    } else if (averageVal >= 42.5 && averageVal < 47.5) {
+        level = 'below-medium';
+    } else if (averageVal >= 47.5 && averageVal <= 52.5) {
+        level = 'medium';
+    } else if (averageVal > 52.5 && averageVal <= 57.5) {
+        level = 'above-medium';
     } else {
-        thresholds = { 'AA': 67, 'BA': 62, 'BB': 57, 'CB': 52, 'CC': 47, 'DC': 42, 'DD': 37 };
+        level = 'high';
+    }
+    
+    // Get grade thresholds based on level and class size
+    let thresholds;
+    
+    if (classSizeVal === 'small') { // Less than 10 students
+        // Small class size thresholds
+        switch(level) {
+            case 'low':
+                thresholds = { 'AA': 52, 'BA': 47, 'BB': 42, 'CB': 37, 'CC': 32, 'DC': 27, 'DD': 22 };
+                break;
+            case 'below-medium':
+                thresholds = { 'AA': 54, 'BA': 49, 'BB': 44, 'CB': 39, 'CC': 34, 'DC': 29, 'DD': 24 };
+                break;
+            case 'medium':
+                thresholds = { 'AA': 57, 'BA': 52, 'BB': 47, 'CB': 42, 'CC': 37, 'DC': 32, 'DD': 27 };
+                break;
+            case 'above-medium':
+                thresholds = { 'AA': 60, 'BA': 55, 'BB': 50, 'CB': 45, 'CC': 40, 'DC': 35, 'DD': 30 };
+                break;
+            case 'high':
+                thresholds = { 'AA': 62, 'BA': 57, 'BB': 52, 'CB': 47, 'CC': 42, 'DC': 37, 'DD': 32 };
+                break;
+        }
+    } else if (classSizeVal === 'medium') { // 10-30 students
+        // Medium class size thresholds
+        switch(level) {
+            case 'low':
+                thresholds = { 'AA': 57, 'BA': 52, 'BB': 47, 'CB': 42, 'CC': 37, 'DC': 32, 'DD': 27 };
+                break;
+            case 'below-medium':
+                thresholds = { 'AA': 60, 'BA': 55, 'BB': 50, 'CB': 45, 'CC': 40, 'DC': 35, 'DD': 30 };
+                break;
+            case 'medium':
+                thresholds = { 'AA': 62, 'BA': 57, 'BB': 52, 'CB': 47, 'CC': 42, 'DC': 37, 'DD': 32 };
+                break;
+            case 'above-medium':
+                thresholds = { 'AA': 65, 'BA': 60, 'BB': 55, 'CB': 50, 'CC': 45, 'DC': 40, 'DD': 35 };
+                break;
+            case 'high':
+                thresholds = { 'AA': 67, 'BA': 62, 'BB': 57, 'CB': 52, 'CC': 47, 'DC': 42, 'DD': 37 };
+                break;
+        }
+    } else { // More than 30 students
+        // Large class size thresholds
+        switch(level) {
+            case 'low':
+                thresholds = { 'AA': 62, 'BA': 57, 'BB': 52, 'CB': 47, 'CC': 42, 'DC': 37, 'DD': 32 };
+                break;
+            case 'below-medium':
+                thresholds = { 'AA': 65, 'BA': 60, 'BB': 55, 'CB': 50, 'CC': 45, 'DC': 40, 'DD': 35 };
+                break;
+            case 'medium':
+                thresholds = { 'AA': 67, 'BA': 62, 'BB': 57, 'CB': 52, 'CC': 47, 'DC': 42, 'DD': 37 };
+                break;
+            case 'above-medium':
+                thresholds = { 'AA': 70, 'BA': 65, 'BB': 60, 'CB': 55, 'CC': 50, 'DC': 45, 'DD': 40 };
+                break;
+            case 'high':
+                thresholds = { 'AA': 72, 'BA': 67, 'BB': 62, 'CB': 57, 'CC': 52, 'DC': 47, 'DD': 42 };
+                break;
+        }
     }
     
     // Calculate required final grades for each letter grade
