@@ -52,6 +52,31 @@
                     <input type="number" id="midtermGrade" min="0" max="100" placeholder="Vize notunuz">
                 </div>
 
+                <!-- Add weight selection -->
+                <div class="form-group">
+                    <label>Not Ağırlıkları:</label>
+                    <div class="weight-selection">
+                        <div>
+                            <input type="radio" name="weightType" id="defaultWeight" value="default" checked>
+                            <label for="defaultWeight">Varsayılan (Vize: %50 - Final: %50)</label>
+                        </div>
+                        <div class="custom-weight">
+                            <input type="radio" name="weightType" id="customWeight" value="custom">
+                            <label for="customWeight">Özel:</label>
+                            <div class="weight-inputs">
+                                <div class="weight-input">
+                                    <label for="midtermWeight">Vize: %</label>
+                                    <input type="number" id="midtermWeight" min="1" max="99" value="50" disabled>
+                                </div>
+                                <div class="weight-input">
+                                    <label for="finalWeight">Final: %</label>
+                                    <input type="number" id="finalWeight" min="1" max="99" value="50" disabled readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label for="classAverage">Sınıf Ortalaması:</label>
                     <input type="number" id="classAverage" min="0" max="100" placeholder="Sınıf ortalaması">
@@ -104,6 +129,31 @@
                 <div class="form-group">
                     <label for="revMidtermGrade">Vize Notu:</label>
                     <input type="number" id="revMidtermGrade" min="0" max="100" placeholder="Vize notunuz">
+                </div>
+
+                <!-- Add weight selection for reverse calculation -->
+                <div class="form-group">
+                    <label>Not Ağırlıkları:</label>
+                    <div class="weight-selection">
+                        <div>
+                            <input type="radio" name="revWeightType" id="revDefaultWeight" value="default" checked>
+                            <label for="revDefaultWeight">Varsayılan (Vize: %50 - Final: %50)</label>
+                        </div>
+                        <div class="custom-weight">
+                            <input type="radio" name="revWeightType" id="revCustomWeight" value="custom">
+                            <label for="revCustomWeight">Özel:</label>
+                            <div class="weight-inputs">
+                                <div class="weight-input">
+                                    <label for="revMidtermWeight">Vize: %</label>
+                                    <input type="number" id="revMidtermWeight" min="1" max="99" value="50" disabled>
+                                </div>
+                                <div class="weight-input">
+                                    <label for="revFinalWeight">Final: %</label>
+                                    <input type="number" id="revFinalWeight" min="1" max="99" value="50" disabled readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-group">

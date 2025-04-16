@@ -93,6 +93,71 @@ const ccGrade = document.getElementById('ccGrade');
 const dcGrade = document.getElementById('dcGrade');
 const ddGrade = document.getElementById('ddGrade');
 
+// DOM Elements - Weight Selection
+const defaultWeightRadio = document.getElementById('defaultWeight');
+const customWeightRadio = document.getElementById('customWeight');
+const midtermWeightInput = document.getElementById('midtermWeight');
+const finalWeightInput = document.getElementById('finalWeight');
+
+const revDefaultWeightRadio = document.getElementById('revDefaultWeight');
+const revCustomWeightRadio = document.getElementById('revCustomWeight');
+const revMidtermWeightInput = document.getElementById('revMidtermWeight');
+const revFinalWeightInput = document.getElementById('revFinalWeight');
+
+// Enable/disable weight inputs based on selection
+defaultWeightRadio.addEventListener('change', () => {
+    if (defaultWeightRadio.checked) {
+        midtermWeightInput.disabled = true;
+        finalWeightInput.disabled = true;
+        midtermWeightInput.value = 50;
+        finalWeightInput.value = 50;
+    }
+});
+
+customWeightRadio.addEventListener('change', () => {
+    if (customWeightRadio.checked) {
+        midtermWeightInput.disabled = false;
+        finalWeightInput.disabled = true; // Keep this readonly, will be calculated
+    }
+});
+
+midtermWeightInput.addEventListener('input', () => {
+    const midtermWeight = parseInt(midtermWeightInput.value) || 0;
+    // Ensure value is between 1-99
+    if (midtermWeight < 1) midtermWeightInput.value = 1;
+    if (midtermWeight > 99) midtermWeightInput.value = 99;
+    
+    // Update final weight to complement midterm weight (total 100%)
+    finalWeightInput.value = 100 - parseInt(midtermWeightInput.value);
+});
+
+// Same event listeners for reverse calculation weight inputs
+revDefaultWeightRadio.addEventListener('change', () => {
+    if (revDefaultWeightRadio.checked) {
+        revMidtermWeightInput.disabled = true;
+        revFinalWeightInput.disabled = true;
+        revMidtermWeightInput.value = 50;
+        revFinalWeightInput.value = 50;
+    }
+});
+
+revCustomWeightRadio.addEventListener('change', () => {
+    if (revCustomWeightRadio.checked) {
+        revMidtermWeightInput.disabled = false;
+        revFinalWeightInput.disabled = true; // Keep this readonly, will be calculated
+    }
+});
+
+revMidtermWeightInput.addEventListener('input', () => {
+    const midtermWeight = parseInt(revMidtermWeightInput.value) || 0;
+    // Ensure value is between 1-99
+    if (midtermWeight < 1) revMidtermWeightInput.value = 1;
+    if (midtermWeight > 99) revMidtermWeightInput.value = 99;
+    
+    // Update final weight to complement midterm weight (total 100%)
+    revFinalWeightInput.value = 100 - parseInt(revMidtermWeightInput.value);
+});
+
 // Toggle between calculation types
 straightCalcBtn.addEventListener('click', () => {
     straightCalcBtn.classList.add('active');
@@ -280,21 +345,6 @@ function getGradeMapForClassSize(classSize) {
     return gradeMap;
 }
 
-// Calculate required final grade for a specific letter grade
-function calculateRequiredFinalGrade(midterm, average, stdDev, targetTScore, classSize) {
-    // To get a specific letter grade, we need to solve for final grade
-    // formula: tScore = 50 + 10 * ((totalGrade - average) / stdDev)
-    // totalGrade = (midterm * 0.4) + (final * 0.6)
-    
-    // Based on the formula above, we can rearrange to solve for finalGrade:
-    // finalGrade = ((((tScore - 50) / 10) * stdDev) + average - (midterm * 0.4)) / 0.6
-    
-    const requiredAverage = (((targetTScore - 50) / 10) * stdDev) + parseFloat(average);
-    const requiredFinal = (requiredAverage - (parseFloat(midterm) * 0.4)) / 0.6;
-    
-    return Math.max(Math.min(Math.ceil(requiredFinal), 100), 0); // Ceiling the value and limit to 0-100 range
-}
-
 // Straight Calculation Event Handler
 calculateGrade.addEventListener('click', () => {
     // Get input values
@@ -303,6 +353,10 @@ calculateGrade.addEventListener('click', () => {
     const averageVal = parseFloat(classAverage.value);
     const stdDevVal = parseFloat(standardDeviation.value);
     const classSizeVal = getSelectedRadioValue(classSizeRadios);
+    
+    // Get weight values
+    const midtermWeight = parseInt(midtermWeightInput.value) / 100;
+    const finalWeight = parseInt(finalWeightInput.value) / 100;
     
     // Validation
     if (isNaN(midtermVal) || isNaN(finalVal) || isNaN(averageVal) || isNaN(stdDevVal)) {
@@ -316,8 +370,8 @@ calculateGrade.addEventListener('click', () => {
         return;
     }
     
-    // Calculate total grade (40% midterm, 60% final)
-    const totalGrade = (midtermVal * 0.4) + (finalVal * 0.6);
+    // Calculate total grade using custom weights
+    const totalGrade = (midtermVal * midtermWeight) + (finalVal * finalWeight);
     
     // Calculate T-Score
     const tScore = calculateTScore(totalGrade, averageVal, stdDevVal);
@@ -345,6 +399,23 @@ calculateGrade.addEventListener('click', () => {
     }
 });
 
+// Calculate required final grade for a specific letter grade
+function calculateRequiredFinalGrade(midterm, average, stdDev, targetTScore, classSize, midtermWeightPercent = null, finalWeightPercent = null) {
+    // Get weight percentages (with defaults if not provided)
+    const midtermWeight = midtermWeightPercent !== null ? midtermWeightPercent / 100 : revMidtermWeightInput.value / 100;
+    const finalWeight = finalWeightPercent !== null ? finalWeightPercent / 100 : revFinalWeightInput.value / 100;
+    
+    // Calculate required average for the target T-score
+    const requiredAverage = (((targetTScore - 50) / 10) * stdDev) + parseFloat(average);
+    
+    // Calculate required final grade based on weights
+    // formula: totalGrade = (midterm * midtermWeight) + (final * finalWeight)
+    // rearranged for final: final = (requiredAverage - (midterm * midtermWeight)) / finalWeight
+    const requiredFinal = (requiredAverage - (parseFloat(midterm) * midtermWeight)) / finalWeight;
+    
+    return Math.max(Math.min(Math.ceil(requiredFinal), 100), 0); // Ceiling the value and limit to 0-100 range
+}
+
 // Reverse Calculation Event Handler
 calculateReverse.addEventListener('click', () => {
     // Get input values
@@ -352,6 +423,10 @@ calculateReverse.addEventListener('click', () => {
     const averageVal = parseFloat(revClassAverage.value);
     const stdDevVal = parseFloat(revStandardDeviation.value);
     const classSizeVal = getSelectedRadioValue(revClassSizeRadios);
+    
+    // Get weight values
+    const midtermWeight = parseInt(revMidtermWeightInput.value);
+    const finalWeight = parseInt(revFinalWeightInput.value);
     
     // Validation
     if (isNaN(midtermVal) || isNaN(averageVal) || isNaN(stdDevVal)) {
@@ -364,7 +439,7 @@ calculateReverse.addEventListener('click', () => {
         return;
     }
     
-    // Determine the level based on class average
+    // Determine thresholds based on class size and average
     let level;
     if (averageVal < 42.5) {
         level = 'low';
@@ -378,11 +453,8 @@ calculateReverse.addEventListener('click', () => {
         level = 'high';
     }
     
-    // Get grade thresholds based on level and class size
     let thresholds;
-    
-    if (classSizeVal === 'small') { // Less than 10 students
-        // Small class size thresholds
+    if (classSizeVal === 'small') {
         switch(level) {
             case 'low':
                 thresholds = { 'AA': 52, 'BA': 47, 'BB': 42, 'CB': 37, 'CC': 32, 'DC': 27, 'DD': 22 };
@@ -400,8 +472,7 @@ calculateReverse.addEventListener('click', () => {
                 thresholds = { 'AA': 62, 'BA': 57, 'BB': 52, 'CB': 47, 'CC': 42, 'DC': 37, 'DD': 32 };
                 break;
         }
-    } else if (classSizeVal === 'medium') { // 10-30 students
-        // Medium class size thresholds
+    } else if (classSizeVal === 'medium') {
         switch(level) {
             case 'low':
                 thresholds = { 'AA': 57, 'BA': 52, 'BB': 47, 'CB': 42, 'CC': 37, 'DC': 32, 'DD': 27 };
@@ -419,8 +490,7 @@ calculateReverse.addEventListener('click', () => {
                 thresholds = { 'AA': 67, 'BA': 62, 'BB': 57, 'CB': 52, 'CC': 47, 'DC': 42, 'DD': 37 };
                 break;
         }
-    } else { // More than 30 students
-        // Large class size thresholds
+    } else {
         switch(level) {
             case 'low':
                 thresholds = { 'AA': 62, 'BA': 57, 'BB': 52, 'CB': 47, 'CC': 42, 'DC': 37, 'DD': 32 };
@@ -440,14 +510,14 @@ calculateReverse.addEventListener('click', () => {
         }
     }
     
-    // Calculate required final grades for each letter grade
-    const aaGradeValue = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['AA'], classSizeVal);
-    const baGradeValue = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['BA'], classSizeVal);
-    const bbGradeValue = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['BB'], classSizeVal);
-    const cbGradeValue = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['CB'], classSizeVal);
-    const ccGradeValue = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['CC'], classSizeVal);
-    const dcGradeValue = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['DC'], classSizeVal);
-    const ddGradeValue = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['DD'], classSizeVal);
+    // Calculate required final grades for each letter grade with custom weights
+    const aaGradeValue = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['AA'], classSizeVal, midtermWeight, finalWeight);
+    const baGradeValue = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['BA'], classSizeVal, midtermWeight, finalWeight);
+    const bbGradeValue = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['BB'], classSizeVal, midtermWeight, finalWeight);
+    const cbGradeValue = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['CB'], classSizeVal, midtermWeight, finalWeight);
+    const ccGradeValue = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['CC'], classSizeVal, midtermWeight, finalWeight);
+    const dcGradeValue = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['DC'], classSizeVal, midtermWeight, finalWeight);
+    const ddGradeValue = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['DD'], classSizeVal, midtermWeight, finalWeight);
     
     // Set the text content for all grades
     aaGrade.textContent = aaGradeValue;
