@@ -1,0 +1,220 @@
+// DOM Elements - Calculation Type Buttons
+const straightCalcBtn = document.getElementById('straightCalcBtn');
+const reverseCalcBtn = document.getElementById('reverseCalcBtn');
+const straightCalculation = document.getElementById('straightCalculation');
+const reverseCalculation = document.getElementById('reverseCalculation');
+
+// DOM Elements - Straight Calculation
+const classSizeRadios = document.getElementsByName('classSize');
+const midtermGrade = document.getElementById('midtermGrade');
+const classAverage = document.getElementById('classAverage');
+const standardDeviation = document.getElementById('standardDeviation');
+const finalGrade = document.getElementById('finalGrade');
+const calculateGrade = document.getElementById('calculateGrade');
+const letterGradeElement = document.getElementById('letterGrade');
+const numericGradeElement = document.getElementById('numericGrade');
+const gradeMessage = document.getElementById('gradeMessage');
+const gradeResult = document.getElementById('gradeResult');
+
+// DOM Elements - Reverse Calculation
+const revClassSizeRadios = document.getElementsByName('revClassSize');
+const revMidtermGrade = document.getElementById('revMidtermGrade');
+const revClassAverage = document.getElementById('revClassAverage');
+const revStandardDeviation = document.getElementById('revStandardDeviation');
+const calculateReverse = document.getElementById('calculateReverse');
+const aaGrade = document.getElementById('aaGrade');
+const baGrade = document.getElementById('baGrade');
+const bbGrade = document.getElementById('bbGrade');
+const cbGrade = document.getElementById('cbGrade');
+const ccGrade = document.getElementById('ccGrade');
+const dcGrade = document.getElementById('dcGrade');
+const ddGrade = document.getElementById('ddGrade');
+
+// Toggle between calculation types
+straightCalcBtn.addEventListener('click', () => {
+    straightCalcBtn.classList.add('active');
+    reverseCalcBtn.classList.remove('active');
+    straightCalculation.style.display = 'block';
+    reverseCalculation.style.display = 'none';
+});
+
+reverseCalcBtn.addEventListener('click', () => {
+    reverseCalcBtn.classList.add('active');
+    straightCalcBtn.classList.remove('active');
+    reverseCalculation.style.display = 'block';
+    straightCalculation.style.display = 'none';
+});
+
+// Helper function to get selected radio value
+function getSelectedRadioValue(radioGroup) {
+    for (const radio of radioGroup) {
+        if (radio.checked) {
+            return radio.value;
+        }
+    }
+    return null;
+}
+
+// Calculate T-Score based on inputs
+function calculateTScore(grade, average, stdDev) {
+    if (stdDev === 0) return 50; // Avoid division by zero
+    return 50 + 10 * ((grade - average) / stdDev);
+}
+
+// Get letter grade based on T-Score and class size
+function getLetterGradeFromTScore(tScore, classSize, finalGrade = null) {
+    // Fail condition: Final grade less than 40
+    if (finalGrade !== null && finalGrade < 40) {
+        return { letter: 'FF', coefficient: 0 };
+    }
+
+    // Different grade limits based on class size
+    let gradeMap;
+    
+    if (classSize === 'small') { // Less than 10 students
+        gradeMap = {
+            'AA': 57, 'BA': 52, 'BB': 47, 'CB': 42, 
+            'CC': 37, 'DC': 32, 'DD': 27, 'FD': 22, 'FF': 0
+        };
+    } else if (classSize === 'medium') { // 10-30 students
+        gradeMap = {
+            'AA': 62, 'BA': 57, 'BB': 52, 'CB': 47, 
+            'CC': 42, 'DC': 37, 'DD': 32, 'FD': 27, 'FF': 0
+        };
+    } else { // More than 30 students
+        gradeMap = {
+            'AA': 67, 'BA': 62, 'BB': 57, 'CB': 52, 
+            'CC': 47, 'DC': 42, 'DD': 37, 'FD': 32, 'FF': 0
+        };
+    }
+
+    // Map letter grades to coefficients
+    const coeffMap = {
+        'AA': 4.0, 'BA': 3.5, 'BB': 3.0, 'CB': 2.5,
+        'CC': 2.0, 'DC': 1.5, 'DD': 1.0, 'FD': 0.5, 'FF': 0.0
+    };
+
+    // Determine letter grade based on T-score
+    for (const [letter, minScore] of Object.entries(gradeMap)) {
+        if (tScore >= minScore) {
+            return { letter, coefficient: coeffMap[letter] };
+        }
+    }
+
+    // Default to FF if no match found
+    return { letter: 'FF', coefficient: 0 };
+}
+
+// Calculate required final grade for a specific letter grade
+function calculateRequiredFinalGrade(midterm, average, stdDev, targetTScore, classSize) {
+    // To get a specific letter grade, we need to solve for final grade
+    // formula: tScore = 50 + 10 * ((totalGrade - average) / stdDev)
+    // totalGrade = (midterm * 0.4) + (final * 0.6)
+    
+    // Based on the formula above, we can rearrange to solve for finalGrade:
+    // finalGrade = ((((tScore - 50) / 10) * stdDev) + average - (midterm * 0.4)) / 0.6
+    
+    const requiredAverage = (((targetTScore - 50) / 10) * stdDev) + parseFloat(average);
+    const requiredFinal = (requiredAverage - (parseFloat(midterm) * 0.4)) / 0.6;
+    
+    return Math.max(Math.min(Math.ceil(requiredFinal), 100), 0); // Ceiling the value and limit to 0-100 range
+}
+
+// Straight Calculation Event Handler
+calculateGrade.addEventListener('click', () => {
+    // Get input values
+    const midtermVal = parseFloat(midtermGrade.value);
+    const finalVal = parseFloat(finalGrade.value);
+    const averageVal = parseFloat(classAverage.value);
+    const stdDevVal = parseFloat(standardDeviation.value);
+    const classSizeVal = getSelectedRadioValue(classSizeRadios);
+    
+    // Validation
+    if (isNaN(midtermVal) || isNaN(finalVal) || isNaN(averageVal) || isNaN(stdDevVal)) {
+        alert('Lütfen tüm alanları doldurun.');
+        return;
+    }
+    
+    if (midtermVal < 0 || midtermVal > 100 || finalVal < 0 || finalVal > 100 || 
+        averageVal < 0 || averageVal > 100 || stdDevVal < 0) {
+        alert('Lütfen geçerli değerler girin (0-100 arası notlar).');
+        return;
+    }
+    
+    // Calculate total grade (40% midterm, 60% final)
+    const totalGrade = (midtermVal * 0.4) + (finalVal * 0.6);
+    
+    // Calculate T-Score
+    const tScore = calculateTScore(totalGrade, averageVal, stdDevVal);
+    
+    // Get letter grade
+    const { letter, coefficient } = getLetterGradeFromTScore(tScore, classSizeVal, finalVal);
+    
+    // Display results
+    letterGradeElement.textContent = letter;
+    numericGradeElement.textContent = coefficient.toFixed(2);
+    
+    // Check if passing grade and show appropriate message and color
+    const passingGrades = ['AA', 'BA', 'BB', 'CB', 'CC', 'DC', 'DD'];
+    if (passingGrades.includes(letter)) {
+        gradeResult.className = 'result pass';
+        gradeMessage.textContent = 'Tebrikler! Bu dersi başarıyla geçtiniz.';
+    } else {
+        gradeResult.className = 'result fail';
+        gradeMessage.textContent = 'Üzgünüz, bu derstten geçer not alamadınız.';
+    }
+});
+
+// Reverse Calculation Event Handler
+calculateReverse.addEventListener('click', () => {
+    // Get input values
+    const midtermVal = parseFloat(revMidtermGrade.value);
+    const averageVal = parseFloat(revClassAverage.value);
+    const stdDevVal = parseFloat(revStandardDeviation.value);
+    const classSizeVal = getSelectedRadioValue(revClassSizeRadios);
+    
+    // Validation
+    if (isNaN(midtermVal) || isNaN(averageVal) || isNaN(stdDevVal)) {
+        alert('Lütfen tüm alanları doldurun.');
+        return;
+    }
+    
+    if (midtermVal < 0 || midtermVal > 100 || averageVal < 0 || averageVal > 100 || stdDevVal < 0) {
+        alert('Lütfen geçerli değerler girin.');
+        return;
+    }
+    
+    // Get grade thresholds based on class size
+    let thresholds;
+    if (classSizeVal === 'small') {
+        thresholds = { 'AA': 57, 'BA': 52, 'BB': 47, 'CB': 42, 'CC': 37, 'DC': 32, 'DD': 27 };
+    } else if (classSizeVal === 'medium') {
+        thresholds = { 'AA': 62, 'BA': 57, 'BB': 52, 'CB': 47, 'CC': 42, 'DC': 37, 'DD': 32 };
+    } else {
+        thresholds = { 'AA': 67, 'BA': 62, 'BB': 57, 'CB': 52, 'CC': 47, 'DC': 42, 'DD': 37 };
+    }
+    
+    // Calculate required final grades for each letter grade
+    aaGrade.textContent = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['AA'], classSizeVal);
+    baGrade.textContent = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['BA'], classSizeVal);
+    bbGrade.textContent = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['BB'], classSizeVal);
+    cbGrade.textContent = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['CB'], classSizeVal);
+    ccGrade.textContent = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['CC'], classSizeVal);
+    dcGrade.textContent = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['DC'], classSizeVal);
+    ddGrade.textContent = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['DD'], classSizeVal);
+    
+    // Highlight impossible grades (greater than 100)
+    const gradeElements = [aaGrade, baGrade, bbGrade, cbGrade, ccGrade, dcGrade, ddGrade];
+    
+    gradeElements.forEach(element => {
+        const gradeValue = parseInt(element.textContent);
+        if (gradeValue > 100) {
+            element.innerHTML = '<span style="color: red;">Ulaşılamaz</span>';
+        } else {
+            // Apply the minimum 40 final grade rule
+            if (gradeValue < 40) {
+                element.innerHTML = '<span style="color: orange;">Min. 40</span>';
+            }
+        }
+    });
+});
