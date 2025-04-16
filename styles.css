@@ -319,13 +319,37 @@ footer {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    header {
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .calculator {
+        padding: 15px;
+    }
+    
     .radio-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .calculation-type {
         flex-direction: column;
         gap: 10px;
     }
     
     .calculation-type button {
         padding: 10px;
+        margin: 0;
+        max-width: none;
     }
     
     .grade-display {
@@ -335,6 +359,11 @@ footer {
     #letterGrade {
         margin-right: 0;
         margin-bottom: 10px;
+        font-size: 2.5rem;
+    }
+    
+    #numericGrade {
+        font-size: 1.8rem;
     }
     
     .theme-toggle {
@@ -346,5 +375,91 @@ footer {
         width: 35px;
         height: 35px;
         font-size: 16px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+    
+    label {
+        font-size: 0.9rem;
+    }
+    
+    input[type="number"] {
+        padding: 10px;
+        font-size: 14px;
+    }
+    
+    button {
+        padding: 12px;
+        font-size: 15px;
+    }
+    
+    .result {
+        padding: 15px;
+        margin-top: 20px;
+    }
+    
+    table {
+        font-size: 14px;
+    }
+    
+    th, td {
+        padding: 8px;
+    }
+}
+
+/* Small Mobile Devices */
+@media (max-width: 480px) {
+    .container {
+        padding: 8px;
+    }
+    
+    header {
+        padding: 12px;
+    }
+    
+    header h1 {
+        font-size: 1.5rem;
+    }
+    
+    header p {
+        font-size: 0.9rem;
+    }
+    
+    .calculator {
+        padding: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .calculation-form h2 {
+        font-size: 1.3rem;
+        margin-bottom: 15px;
+    }
+    
+    #letterGrade {
+        font-size: 2.2rem;
+    }
+    
+    #numericGrade {
+        font-size: 1.5rem;
+    }
+    
+    .result h3 {
+        font-size: 1.2rem;
+    }
+    
+    #gradeMessage {
+        font-size: 0.95rem;
+    }
+    
+    footer {
+        padding: 15px;
+        margin-top: 20px;
+        font-size: 0.85rem;
+    }
+    
+    .grades-table {
+        overflow-x: scroll;
     }
 }

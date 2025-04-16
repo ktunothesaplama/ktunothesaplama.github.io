@@ -126,8 +126,8 @@ function calculateTScore(grade, average, stdDev) {
 
 // Get letter grade based on T-Score and class size
 function getLetterGradeFromTScore(tScore, classSize, finalGrade = null) {
-    // Fail condition: Final grade less than 40
-    if (finalGrade !== null && finalGrade < 40) {
+    // Fail condition: Final grade less than 45
+    if (finalGrade !== null && finalGrade < 45) {
         return { letter: 'FF', coefficient: 0 };
     }
 
@@ -218,10 +218,15 @@ calculateGrade.addEventListener('click', () => {
     numericGradeElement.textContent = coefficient.toFixed(2);
     
     // Check if passing grade and show appropriate message and color
-    const passingGrades = ['AA', 'BA', 'BB', 'CB', 'CC', 'DC', 'DD'];
+    const passingGrades = ['AA', 'BA', 'BB', 'CB', 'CC', 'DC'];
     if (passingGrades.includes(letter)) {
-        gradeResult.className = 'result pass';
-        gradeMessage.textContent = 'Tebrikler! Bu dersi başarıyla geçtiniz.';
+        if (finalVal < 45) {
+            gradeResult.className = 'result fail';
+            gradeMessage.textContent = 'Final notunuz 45\'in altında olduğu için dersten kaldınız.';
+        } else {
+            gradeResult.className = 'result pass';
+            gradeMessage.textContent = 'Tebrikler! Bu dersi başarıyla geçtiniz.';
+        }
     } else {
         gradeResult.className = 'result fail';
         gradeMessage.textContent = 'Üzgünüz, bu derstten geçer not alamadınız.';
@@ -258,26 +263,40 @@ calculateReverse.addEventListener('click', () => {
     }
     
     // Calculate required final grades for each letter grade
-    aaGrade.textContent = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['AA'], classSizeVal);
-    baGrade.textContent = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['BA'], classSizeVal);
-    bbGrade.textContent = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['BB'], classSizeVal);
-    cbGrade.textContent = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['CB'], classSizeVal);
-    ccGrade.textContent = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['CC'], classSizeVal);
-    dcGrade.textContent = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['DC'], classSizeVal);
-    ddGrade.textContent = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['DD'], classSizeVal);
+    const aaGradeValue = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['AA'], classSizeVal);
+    const baGradeValue = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['BA'], classSizeVal);
+    const bbGradeValue = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['BB'], classSizeVal);
+    const cbGradeValue = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['CB'], classSizeVal);
+    const ccGradeValue = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['CC'], classSizeVal);
+    const dcGradeValue = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['DC'], classSizeVal);
+    const ddGradeValue = calculateRequiredFinalGrade(midtermVal, averageVal, stdDevVal, thresholds['DD'], classSizeVal);
+    
+    // Set the text content for all grades
+    aaGrade.textContent = aaGradeValue;
+    baGrade.textContent = baGradeValue;
+    bbGrade.textContent = bbGradeValue;
+    cbGrade.textContent = cbGradeValue;
+    ccGrade.textContent = ccGradeValue;
+    dcGrade.textContent = dcGradeValue;
+    ddGrade.textContent = ddGradeValue;
     
     // Highlight impossible grades (greater than 100)
-    const gradeElements = [aaGrade, baGrade, bbGrade, cbGrade, ccGrade, dcGrade, ddGrade];
+    const gradeElements = [
+        { element: aaGrade, value: aaGradeValue },
+        { element: baGrade, value: baGradeValue },
+        { element: bbGrade, value: bbGradeValue },
+        { element: cbGrade, value: cbGradeValue },
+        { element: ccGrade, value: ccGradeValue },
+        { element: dcGrade, value: dcGradeValue },
+        { element: ddGrade, value: ddGradeValue }
+    ];
     
-    gradeElements.forEach(element => {
-        const gradeValue = parseInt(element.textContent);
-        if (gradeValue > 100) {
+    gradeElements.forEach(({ element, value }) => {
+        if (value > 100) {
             element.innerHTML = '<span style="color: red;">Ulaşılamaz</span>';
-        } else {
-            // Apply the minimum 40 final grade rule
-            if (gradeValue < 40) {
-                element.innerHTML = '<span style="color: orange;">Min. 40</span>';
-            }
+        } else if (value < 45) {
+            // Show original grade value along with the minimum requirement note
+            element.innerHTML = `<span style="color: orange;">Min. 45 (${value})</span>`;
         }
     });
 });
