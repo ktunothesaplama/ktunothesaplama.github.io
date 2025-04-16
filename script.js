@@ -1,3 +1,66 @@
+// DOM Elements - Theme Toggle
+const themeToggleBtn = document.getElementById('themeToggle');
+const htmlElement = document.documentElement;
+
+// Check for saved theme preference or respect OS theme preference
+function initializeTheme() {
+    // Check if user has previously selected a theme
+    const savedTheme = localStorage.getItem('ktuTheme');
+    
+    if (savedTheme) {
+        // Apply saved theme
+        if (savedTheme === 'dark') {
+            htmlElement.classList.add('dark-theme');
+            updateThemeIcons(true);
+        }
+    } else {
+        // Check if user prefers dark mode at OS level
+        const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (prefersDarkMode) {
+            htmlElement.classList.add('dark-theme');
+            updateThemeIcons(true);
+            localStorage.setItem('ktuTheme', 'dark');
+        } else {
+            localStorage.setItem('ktuTheme', 'light');
+        }
+    }
+}
+
+// Update theme icons based on current theme
+function updateThemeIcons(isDarkTheme) {
+    const lightIcon = document.querySelector('.light-icon');
+    const darkIcon = document.querySelector('.dark-icon');
+    
+    if (isDarkTheme) {
+        lightIcon.style.display = 'inline';
+        lightIcon.style.opacity = '1';
+        darkIcon.style.display = 'none';
+        darkIcon.style.opacity = '0';
+    } else {
+        lightIcon.style.display = 'none';
+        lightIcon.style.opacity = '0';
+        darkIcon.style.display = 'inline';
+        darkIcon.style.opacity = '1';
+    }
+}
+
+// Toggle theme event listener
+themeToggleBtn.addEventListener('click', () => {
+    const isDarkTheme = htmlElement.classList.toggle('dark-theme');
+    
+    // Update theme in localStorage
+    localStorage.setItem('ktuTheme', isDarkTheme ? 'dark' : 'light');
+    
+    // Update theme icons
+    updateThemeIcons(isDarkTheme);
+});
+
+// Initialize theme on page load
+document.addEventListener('DOMContentLoaded', () => {
+    initializeTheme();
+});
+
 // DOM Elements - Calculation Type Buttons
 const straightCalcBtn = document.getElementById('straightCalcBtn');
 const reverseCalcBtn = document.getElementById('reverseCalcBtn');
